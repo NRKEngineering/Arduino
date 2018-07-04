@@ -41,7 +41,7 @@ void loop()
 	
 	if(hallIn == LOW)
 	{	// Turn on LED and buzzer
-		digitalWrite(ledPin, HIGH);
+		digitalWrite(ledOut, HIGH);
 		tone(buzzerOut, buzzTone);
 		// Buzz for one second
 		delay(1000);
