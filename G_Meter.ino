@@ -1,11 +1,21 @@
 #include <SD.h>
-# include <SPI.h>
-# include <Wire.h>
-# include <Time.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <TimeLib.h>
+//#include <math.h>
+#include <math.h>
 
 // Accelerometer MPU-6050 3 Axis
+
+/* How to connect GY-521
+  VCC - 5v
+  GND - GND
+  SCL - A5
+  SDA - A4
+*/
+
 const int MPU_addr = 0x68; // I2C addess of MPU-6050
-int16_t Ax, Ay, Az;
+int16_t Ax, Ay, Az,Tmp,GyX,GyY,GyZ, ARes, GVal;
 
 void setup() {
   Wire.begin();
@@ -20,10 +30,10 @@ void setup() {
 
   Serial.print("Initializing SD card...");
 
-  if(!SD.begin(4)){
-    Serial.println("Initialisation failed");
-    while (1);
-  }
+//  if(!SD.begin(4)){
+//    Serial.println("Initialisation failed");
+//    while (1);
+  //}
   Serial.println("Initilisation done");
 }
 
@@ -34,18 +44,38 @@ void loop() {
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x3B);                  // starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
-  Wire.requestFrom(MPU_addr,14,true); // request a total of 14 registers
+  Wire.requestFrom(MPU_addr,12,true); // request a total of 14 registers
+  time_t t = now();  // Get current milliseconds since start
   Ax=Wire.read()<<8|Wire.read();      // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)    
   Ay=Wire.read()<<8|Wire.read();      // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
   Az=Wire.read()<<8|Wire.read();      // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-  Serial.print("Ax = "); Serial.print(Ax);
-  Serial.print(" | Ay = "); Serial.print(Ay);
-  Serial.print(" | Az = "); Serial.print(Az);
+  GyX=Wire.read()<<8|Wire.read();  
+  GyY=Wire.read()<<8|Wire.read();  
+  GyZ=Wire.read()<<8|Wire.read();
+  
+  ARes = sqrt(pow(Ax,2)+pow(Ay,2)+pow(Az,2));
+  
+  GVal = (ARes*0.061) - 1000;
+  
+  //Serial.print("Accelerometer: ");
+  //Serial.print("Ax = "); Serial.print(Ax);
+  //Serial.print(" | Ay = "); Serial.print(Ay);
+  //Serial.print(" | Az = "); Serial.print(Az);
+ 
+  Serial.print(String(millis()));
+  Serial.print(","); Serial.print(ARes);
+  Serial.print(","); Serial.print(GVal);
+  
+//  Serial.print("Gyroscope: ");
+//  Serial.print("X = "); Serial.print(GyX);
+//  Serial.print(" | Y = "); Serial.print(GyY);
+//  Serial.print(" | Z = "); Serial.println(GyZ);
+  Serial.println(" ");
 
-  time_t t = now();
-
-  dataString += millis(t) = "," + String(Ax) + "," String(Ay) + "," String(Az);
-
+  
+  
+  
+  
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
   File dataFile = SD.open("accelData.txt", FILE_WRITE);
@@ -59,7 +89,7 @@ void loop() {
   }
   // if the file isn't open, pop up an error:
   else {
-    Serial.println("error opening datalog.txt");
+    //Serial.println("error opening datalog.txt");
   }
 
   
